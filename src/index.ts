@@ -30,6 +30,7 @@ import { ensureMoltbotGateway, findExistingMoltbotProcess, syncToR2 } from './ga
 import { publicRoutes, api, adminUi, debug, cdp } from './routes';
 import loadingPageHtml from './assets/loading.html';
 import configErrorHtml from './assets/config-error.html';
+import localizeZhScript from './assets/localize-zh.js?raw';
 
 /**
  * Transform error messages from the gateway to be more user-friendly.
@@ -373,6 +374,31 @@ app.all('*', async (c) => {
   const newHeaders = new Headers(httpResponse.headers);
   newHeaders.set('X-Worker-Debug', 'proxy-to-moltbot');
   newHeaders.set('X-Debug-Path', url.pathname);
+  
+  // Check if response is HTML and inject localization script
+  const contentType = httpResponse.headers.get('content-type') || '';
+  if (contentType.includes('text/html')) {
+    console.log('[HTTP] Injecting localization script into HTML response');
+    let html = await httpResponse.text();
+    
+    // Inject the localization script before </body>
+    const localizationScript = `<script>${localizeZhScript}</script>`;
+    if (html.includes('</body>')) {
+      html = html.replace('</body>', `${localizationScript}</body>`);
+    } else {
+      // If no </body> tag, append to the end
+      html += localizationScript;
+    }
+    
+    // Update content-length header
+    newHeaders.delete('content-length');
+    
+    return new Response(html, {
+      status: httpResponse.status,
+      statusText: httpResponse.statusText,
+      headers: newHeaders,
+    });
+  }
   
   return new Response(httpResponse.body, {
     status: httpResponse.status,
