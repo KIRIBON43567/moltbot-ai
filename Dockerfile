@@ -19,6 +19,11 @@ RUN npm install -g pnpm
 RUN npm install -g clawdbot@2026.1.24-3 \
     && clawdbot --version
 
+# Localize Control UI to Chinese
+# Build cache bust: 2026-01-30-v27-chinese-ui
+COPY localize-zh.sh /tmp/localize-zh.sh
+RUN chmod +x /tmp/localize-zh.sh && /tmp/localize-zh.sh && rm /tmp/localize-zh.sh
+
 # Create moltbot directories (paths still use clawdbot until upstream renames)
 # Templates are stored in /root/.clawdbot-templates for initialization
 RUN mkdir -p /root/.clawdbot \
@@ -27,7 +32,6 @@ RUN mkdir -p /root/.clawdbot \
     && mkdir -p /root/clawd/skills
 
 # Copy startup script
-# Build cache bust: 2026-01-28-v26-browser-skill
 COPY start-moltbot.sh /usr/local/bin/start-moltbot.sh
 RUN chmod +x /usr/local/bin/start-moltbot.sh
 
